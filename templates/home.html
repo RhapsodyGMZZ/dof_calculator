@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="container mx-auto px-4 py-8 max-w-2xl">
+    <div class="bg-white rounded-lg shadow-lg p-6 md:p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Depth of Field Calculator</h1>
+        <p class="text-gray-600 mb-8">Enter your camera settings to calculate the depth of field range</p>
+        
+        <form id="dofForm" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Sensor Selection -->
+            <div>
+                <label for="sensor" class="block text-sm font-medium text-gray-700 mb-2">
+                    Camera Sensor
+                </label>
+                <select id="sensor" name="sensor_id" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    <option value="">Select a sensor...</option>
+                    {% for sensor in sensors %}
+                        <option {% if sensor.id == 1 %}selected{% endif %} value="{{ sensor.id }}" data-coc="{{ sensor.coc }}">{{ sensor.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Focal Length -->
+            <div>
+                <label for="focal_length" class="block text-sm font-medium text-gray-700 mb-2">
+                    Focal Length (mm)
+                </label>
+                <input type="number" id="focal_length" name="focal_length" step="0.1" min="0.1" 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       placeholder="e.g., 50" required>
+            </div>
+
+            <!-- Aperture -->
+            <div>
+                <label for="aperture" class="block text-sm font-medium text-gray-700 mb-2">
+                    Aperture (f-number)
+                </label>
+                <select id="aperture" name="aperture" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" required>
+                    <option value="">Select aperture...</option>
+                    <option value="1.2">f/1.2</option>
+                    <option value="1.4">f/1.4</option>
+                    <option value="1.6">f/1.6</option>
+                    <option value="1.8">f/1.8</option>
+                    <option value="2">f/2</option>
+                    <option value="2.2">f/2.2</option>
+                    <option value="2.5">f/2.5</option>
+                    <option value="2.8">f/2.8</option>
+                    <option value="3.2">f/3.2</option>
+                    <option value="3.5">f/3.5</option>
+                    <option value="4">f/4</option>
+                    <option value="4.5">f/4.5</option>
+                    <option value="5">f/5</option>
+                    <option value="5.6">f/5.6</option>
+                    <option value="6.3">f/6.3</option>
+                    <option value="7.1">f/7.1</option>
+                    <option value="8">f/8</option>
+                    <option value="9">f/9</option>
+                    <option value="10">f/10</option>
+                    <option value="11">f/11</option>
+                    <option value="13">f/13</option>
+                    <option value="14">f/14</option>
+                    <option value="16">f/16</option>
+                    <option value="18">f/18</option>
+                    <option value="20">f/20</option>
+                    <option value="22">f/22</option>
+                    <option value="25">f/25</option>
+                    <option value="29">f/29</option>
+                    <option value="32">f/32</option>
+                </select>
+            </div>
+
+            <!-- Subject Distance -->
+            <div>
+                <label for="subject_distance" class="block text-sm font-medium text-gray-700 mb-2">
+                    Subject Distance (meters)
+                </label>
+                <input type="number" id="subject_distance" name="subject_distance" step="0.1" min="0.1" 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       placeholder="e.g., 2.5" required>
+            </div>
+
+            <!-- Calculate Button -->
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200 transform hover:scale-105">
+                Calculate DOF
+            </button>
+        </form>
+
+        <!-- Results -->
+        <div id="results" class="mt-8 hidden">
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-6 border border-blue-200">
+                <h2 class="text-xl font-bold text-gray-800 mb-4">Results</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div class="bg-white rounded p-4 shadow">
+                        <p class="text-gray-600 text-sm">Near Distance</p>
+                        <p id="nearDistance" class="text-2xl font-bold text-blue-600">-</p>
+                        <p class="text-gray-500 text-xs mt-1">meters</p>
+                    </div>
+                    <div class="bg-white rounded p-4 shadow">
+                        <p class="text-gray-600 text-sm">Far Distance</p>
+                        <p id="farDistance" class="text-2xl font-bold text-blue-600">-</p>
+                        <p class="text-gray-500 text-xs mt-1">meters</p>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded p-4 shadow mb-4">
+                    <p class="text-gray-600 text-sm">Total Depth of Field</p>
+                    <p id="dof" class="text-3xl font-bold text-green-600">-</p>
+                    <p class="text-gray-500 text-xs mt-1">meters</p>
+                </div>
+
+                <div class="bg-white rounded p-4 shadow text-sm">
+                    <p class="text-gray-600">Sensor: <span id="sensorName" class="font-semibold">-</span></p>
+                    <p class="text-gray-600">CoC: <span id="coc" class="font-semibold">-</span> mm</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error" class="mt-8 hidden">
+            <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                <p id="errorMessage">An error occurred</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('dofForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            focal_length: document.getElementById('focal_length').value,
+            aperture: document.getElementById('aperture').value,
+            subject_distance: document.getElementById('subject_distance').value,
+            sensor_id: document.getElementById('sensor').value,
+        };
+
+        try {
+            const response = await fetch('{% url "calculate_dof" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                document.getElementById('nearDistance').textContent = data.near_distance + ' m';
+                document.getElementById('farDistance').textContent = data.far_distance + ' m';
+                document.getElementById('dof').textContent = data.dof + ' m';
+                document.getElementById('sensorName').textContent = data.sensor_name;
+                document.getElementById('coc').textContent = data.coc;
+                
+                document.getElementById('results').classList.remove('hidden');
+                document.getElementById('error').classList.add('hidden');
+            } else {
+                document.getElementById('errorMessage').textContent = data.error || 'An error occurred';
+                document.getElementById('error').classList.remove('hidden');
+                document.getElementById('results').classList.add('hidden');
+            }
+        } catch (error) {
+            document.getElementById('errorMessage').textContent = 'Network error: ' + error.message;
+            document.getElementById('error').classList.remove('hidden');
+            document.getElementById('results').classList.add('hidden');
+        }
+    });
+</script>
+{% endblock main %}
