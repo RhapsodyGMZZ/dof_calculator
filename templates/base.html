@@ -13,8 +13,8 @@
           <link href="/static/tailwind.css" rel="stylesheet">
         <title>Depth of Field Calculator</title>
     </head>
-    <body>
-        <main class="flex justify-center items-center">{% block main %}{% endblock main %}</main>
+    <body class="flex flex-col min-h-screen">
+        <main class="flex justify-center items-center flex-1">{% block main %}{% endblock main %}</main>
+        <footer class="text-center py-4 bg-white">All rights reserved to RhapsodyGMZZ&copy;</footer>
     </body>
-    <footer class="fixed bottom-0 left-0 right-0 text-center py-4 bg-white">All rights reserved to RhapsodyGMZZ&copy;</footer>
 </html>
